@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tiden Music</title>
+  <style>
+    :root {
+      --bg-top: #e6e6e6;
+      --bg-bottom: #c8c8c8;
+      --bar-grad-top: #ededed;
+      --bar-grad-bottom: #bebebe;
+      --border-color: #a0a0a0;
+      --text-main: #111111;
+      --text-sub: #666666;
+      --blue-accent: #3880e8;
+      --row-alt: #f3f5f8;
+      --row-hover: #e4e8f0;
+      --row-selected: #3882e0;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      color: var(--text-main);
+    }
+
+    /* Top iTunes Header Controls */
+    header {
+      background: linear-gradient(to bottom, #f2f2f2, #c5c5c5);
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: inset 0 1px 0 #ffffff;
+      height: 54px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .app-title {
+      font-weight: bold;
+      font-size: 16px;
+      color: #333;
+      text-shadow: 0 1px 0 #fff;
+    }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      background: linear-gradient(to bottom, #ffffff, #dcdcdc);
+      border: 1px solid #8e8e8e;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 #fff;
+    }
+
+    .btn-icon:active {
+      background: #b5b5b5;
+    }
+
+    .now-playing-display {
+      background: linear-gradient(to bottom, #e2e2e2, #ffffff);
+      border: 1px solid #999;
+      border-radius: 4px;
+      padding: 4px 12px;
+      min-width: 260px;
+      text-align: center;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .now-playing-title {
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .now-playing-sub {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .scrubber-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .scrubber-container input[type="range"] {
+      flex: 1;
+      height: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    select {
+      border: 1px solid #8e8e8e;
+      border-radius: 12px;
+      padding: 3px 8px;
+      font-size: 12px;
+      background: #fff;
+      outline: none;
+    }
+
+    /* Sub Navigation Bar */
+    nav {
+      background: linear-gradient(to bottom, var(--bar-grad-top), var(--bar-grad-bottom));
+      border-bottom: 1px solid #999;
+      display: flex;
+      justify-content: center;
+      padding: 3px 0;
+      box-shadow: inset 0 1px 0 #fff;
+      flex-shrink: 0;
+    }
+
+    .nav-tabs {
+      display: flex;
+      border: 1px solid #777;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .nav-btn {
+      background: linear-gradient(to bottom, #fcfcfc, #d5d5d5);
+      border: none;
+      border-right: 1px solid #888;
+      padding: 4px 16px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+      text-shadow: 0 1px 0 #fff;
+    }
+
+    .nav-btn:last-child {
+      border-right: none;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(to bottom, #6b6b6b, #454545);
+      color: #fff;
+      text-shadow: 0 -1px 0 #000;
+    }
+
+    /* Main Content Area */
+    main {
+      flex: 1;
+      background: #ffffff;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* View 1: Grid Layout (Albums & Artists) */
+    .grid-view {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .grid-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .grid-item img {
+      width: 130px;
+      height: 130px;
+      object-fit: cover;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      border-radius: 2px;
+      background-color: #eee;
+    }
+
+    .grid-item-title {
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 8px;
+      width: 130px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .grid-item-sub {
+      font-size: 11px;
+      color: var(--text-sub);
+      width: 130px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* View 2: List Layout (Songs) */
+    .list-view {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .list-view th {
+      background: linear-gradient(to bottom, #f0f0f0, #d8d8d8);
+      border-bottom: 1px solid #aaa;
+      border-right: 1px solid #ccc;
+      padding: 4px 8px;
+      text-align: left;
+      font-weight: normal;
+      color: #444;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .list-view tr {
+      border-bottom: 1px solid #e8e8e8;
+      cursor: pointer;
+    }
+
+    .list-view tr:nth-child(even) {
+      background-color: var(--row-alt);
+    }
+
+    .list-view tr:hover {
+      background-color: var(--row-hover);
+    }
+
+    .list-view tr.playing {
+      font-weight: bold;
+      color: var(--blue-accent);
+    }
+
+    .list-view td {
+      padding: 4px 8px;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-art-thumb {
+      width: 28px;
+      height: 28px;
+      object-fit: cover;
+      border-radius: 2px;
+      margin-right: 8px;
+      vertical-align: middle;
+      background-color: #eee;
+    }
+
+    /* View 3: Detail Pages */
+    .detail-view {
+      padding: 20px;
+    }
+
+    .detail-header {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 16px;
+    }
+
+    .detail-header img {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      border-radius: 2px;
+      background-color: #eee;
+    }
+
+    .detail-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .detail-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 0 0 6px 0;
+    }
+
+    .detail-subtitle {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+
+    .back-btn {
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .empty-state {
+      padding: 40px;
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- iTunes Player Top Bar -->
+  <header>
+    <div class="header-left">
+      <span class="app-title" data-i18n="Tiden Music">Tiden Music</span>
+      <div class="player-controls">
+        <button id="prev-btn" class="btn-icon">⏮</button>
+        <button id="play-btn" class="btn-icon">▶</button>
+        <button id="next-btn" class="btn-icon">⏭</button>
+      </div>
+      <div class="now-playing-display">
+        <div id="np-title" class="now-playing-title" data-i18n="Not Playing">Not Playing</div>
+        <div id="np-sub" class="now-playing-sub">-</div>
+        <div class="scrubber-container">
+          <input type="range" id="progress-bar" value="0" min="0" max="100">
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <input type="range" id="volume-bar" value="100" min="0" max="100" style="width:70px;">
+      <select id="targetLang">
+        <option value="siennic" selected>Siennic</option>
+        <option value="english">English</option>
+        <option value="riverlundi">Riverlundi</option>
+        <option value="peschaten">Peschaten</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Navigation View Bar -->
+  <nav>
+    <div class="nav-tabs">
+      <button class="nav-btn active" data-view="songs" data-i18n="Songs" onclick="switchView('songs')">Songs</button>
+      <button class="nav-btn" data-view="albums" data-i18n="Albums" onclick="switchView('albums')">Albums</button>
+      <button class="nav-btn" data-view="artists" data-i18n="Artists" onclick="switchView('artists')">Artists</button>
+    </div>
+  </nav>
+
+  <!-- Main View Container -->
+  <main id="main-content">
+    <!-- View content is dynamically loaded here -->
+  </main>
+
+  <script>
+    // --- TRANSLATOR ENGINE ---
+    const RIVERLUNDI_CLUSTERS = [
+      "tion", "sion", "ight", "ough", "eigh", "tch", "dge", "str", "spr", "spl", "sch", "thr", "shr", "ing", "est",
+      "ph", "gh", "th", "sh", "ch", "wh", "ck", "kn", "wr", "ng", "qu", "st", "sp", "sc", "sk", "sm", "sn", "sw",
+      "tr", "dr", "pr", "br", "cr", "gr", "fr", "pl", "bl", "cl", "gl", "fl", "sl", "nd", "nt", "mp", "lt", "ld",
+      "ee", "ea", "oo", "ou", "ow", "ai", "ay", "oa", "oe", "ie", "ei", "ue", "ew", "ui", "au", "aw", "oi", "oy",
+      "er", "ir", "ur", "ar", "or", "al", "el"
+    ];
+
+    function matchCapitalization(original, transformed) {
+      const isFirstCap = /^[A-Z]/.test(original);
+      const isAllCap = original.length > 1 && original === original.toUpperCase();
+      let lower = transformed.toLowerCase();
+      if (isAllCap) return lower.toUpperCase();
+      if (isFirstCap) return lower.charAt(0).toUpperCase() + lower.slice(1);
+      return lower;
+    }
+
+    function processTokens(text, wordTransformFn) {
+      return text.replace(/[a-zA-Z]+/g, function(word) {
+        return matchCapitalization(word, wordTransformFn(word));
+      });
+    }
+
+    function transformSiennicWord(word) {
+      return word.split('').reverse().join('');
+    }
+
+    function tokenizePhonetic(word) {
+      let lower = word.toLowerCase();
+      let tokens = [];
+      let i = 0;
+      while (i < lower.length) {
+        let matched = false;
+        for (let c of RIVERLUNDI_CLUSTERS) {
+          if (lower.startsWith(c, i)) {
+            tokens.push(c);
+            i += c.length;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          tokens.push(lower[i]);
+          i++;
+        }
+      }
+      return tokens;
+    }
+
+    function transformRiverlundiWord(word) {
+      return tokenizePhonetic(word).reverse().join('');
+    }
+
+    function transformPeschatenWord(word) {
+      if (word.length === 1) return "sht";
+      const reversed = word.split('').reverse().join('');
+      const removedChar = reversed.slice(-1).toLowerCase();
+      const base = reversed.slice(0, -1);
+      let suffix = "itna";
+      if ("aeiou".includes(removedChar)) suffix = "aten";
+      else if ("yw".includes(removedChar)) suffix = "vuhtvad";
+      return base + suffix;
+    }
+
+    function translateText(text, targetLang) {
+      if (!text) return "";
+      if (targetLang === "siennic") return processTokens(text, transformSiennicWord);
+      if (targetLang === "riverlundi") return processTokens(text, transformRiverlundiWord);
+      if (targetLang === "peschaten") return processTokens(text, transformPeschatenWord);
+      return text;
+    }
+
+    // --- APPLICATION STATE & MUSIC PLAYER ---
+    const audio = new Audio();
+    let songs = [];
+    let currentView = 'songs';
+    let currentTrackIndex = -1;
+
+    // DOM Elements
+    const mainContent = document.getElementById('main-content');
+    const playBtn = document.getElementById('play-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const progressBar = document.getElementById('progress-bar');
+    const volumeBar = document.getElementById('volume-bar');
+    const npTitle = document.getElementById('np-title');
+    const npSub = document.getElementById('np-sub');
+    const langSelect = document.getElementById('targetLang');
+
+    async function init() {
+      try {
+        const res = await fetch('songs.json');
+        songs = await res.json();
+      } catch (e) {
+        songs = [];
+      }
+      translateStaticUI();
+      render();
+    }
+
+    function getLang() {
+      return langSelect.value;
+    }
+
+    function translateStaticUI() {
+      const lang = getLang();
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const originalText = el.getAttribute('data-i18n');
+        el.innerText = translateText(originalText, lang);
+      });
+    }
+
+    function switchView(viewName) {
+      currentView = viewName;
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-view') === viewName);
+      });
+      render();
+    }
+
+    function playSongByIndex(index) {
+      if (index < 0 || index >= songs.length) return;
+      currentTrackIndex = index;
+      const song = songs[currentTrackIndex];
+      audio.src = song.src;
+      audio.play();
+      playBtn.innerText = '⏸';
+      updateNowPlaying();
+      render();
+    }
+
+    function updateNowPlaying() {
+      const lang = getLang();
+      if (currentTrackIndex >= 0 && songs[currentTrackIndex]) {
+        const song = songs[currentTrackIndex];
+        npTitle.innerText = translateText(song.title, lang);
+        npSub.innerText = `${translateText(song.artist, lang)} — ${translateText(song.album, lang)}`;
+      } else {
+        npTitle.innerText = translateText("Not Playing", lang);
+        npSub.innerText = "-";
+      }
+    }
+
+    // Controls listeners
+    playBtn.addEventListener('click', () => {
+      if (!audio.src && songs.length > 0) {
+        playSongByIndex(0);
+        return;
+      }
+      if (audio.paused) {
+        audio.play();
+        playBtn.innerText = '⏸';
+      } else {
+        audio.pause();
+        playBtn.innerText = '▶';
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (songs.length === 0) return;
+      let prevIndex = currentTrackIndex - 1;
+      if (prevIndex < 0) prevIndex = songs.length - 1;
+      playSongByIndex(prevIndex);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (songs.length === 0) return;
+      let nextIndex = (currentTrackIndex + 1) % songs.length;
+      playSongByIndex(nextIndex);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        progressBar.value = (audio.currentTime / audio.duration) * 100;
+      }
+    });
+
+    progressBar.addEventListener('input', () => {
+      if (audio.duration) {
+        audio.currentTime = (progressBar.value / 100) * audio.duration;
+      }
+    });
+
+    volumeBar.addEventListener('input', () => {
+      audio.volume = volumeBar.value / 100;
+    });
+
+    langSelect.addEventListener('change', () => {
+      translateStaticUI();
+      updateNowPlaying();
+      render();
+    });
+
+    // --- RENDER VIEWS ---
+    function render() {
+      updateNowPlaying();
+      mainContent.innerHTML = '';
+
+      if (currentView === 'songs') {
+        renderSongsView();
+      } else if (currentView === 'albums') {
+        renderAlbumsView();
+      } else if (currentView === 'artists') {
+        renderArtistsView();
+      } else if (currentView.startsWith('album-detail-')) {
+        const albumName = currentView.replace('album-detail-', '');
+        renderAlbumDetailView(albumName);
+      } else if (currentView.startsWith('artist-detail-')) {
+        const artistName = currentView.replace('artist-detail-', '');
+        renderArtistDetailView(artistName);
+      }
+    }
+
+    // 1. Songs List View
+    function renderSongsView() {
+      const lang = getLang();
+      if (songs.length === 0) {
+        mainContent.innerHTML = `<div class="empty-state">${translateText("No songs available.", lang)}</div>`;
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.className = 'list-view';
+      
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>${translateText("Name", lang)}</th>
+            <th>${translateText("Artist", lang)}</th>
+            <th>${translateText("Album", lang)}</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+
+      const tbody = table.querySelector('tbody');
+
+      songs.forEach((song, index) => {
+        const tr = document.createElement('tr');
+        if (index === currentTrackIndex) tr.className = 'playing';
+
+        tr.innerHTML = `
+          <td>
+            <img class="list-art-thumb" src="${song.cover}" alt="Art">
+            ${translateText(song.title, lang)}
+          </td>
+          <td>${translateText(song.artist, lang)}</td>
+          <td>${translateText(song.album, lang)}</td>
+        `;
+
+        tr.addEventListener('click', () => playSongByIndex(index));
+        tbody.appendChild(tr);
+      });
+
+      mainContent.appendChild(table);
+    }
+
+    // 2. Albums Grid View
+    function renderAlbumsView() {
+      const lang = getLang();
+      const grid = document.createElement('div');
+      grid.className = 'grid-view';
+
+      const albumMap = {};
+      songs.forEach(song => {
+        if (!albumMap[song.album]) {
+          albumMap[song.album] = {
+            name: song.album,
+            artist: song.artist,
+            cover: song.cover
+          };
+        }
+      });
+
+      const sortedAlbums = Object.values(albumMap).sort((a, b) => a.name.localeCompare(b.name));
+
+      if (sortedAlbums.length === 0) {
+        mainContent.innerHTML = `<div class="empty-state">${translateText("No albums available.", lang)}</div>`;
+        return;
+      }
+
+      sortedAlbums.forEach(album => {
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+        item.innerHTML = `
+          <img src="${album.cover}" alt="Cover">
+          <div class="grid-item-title">${translateText(album.name, lang)}</div>
+          <div class="grid-item-sub">${translateText("By", lang)} ${translateText(album.artist, lang)}</div>
+        `;
+
+        item.addEventListener('click', () => {
+          currentView = `album-detail-${album.name}`;
+          render();
+        });
+
+        grid.appendChild(item);
+      });
+
+      mainContent.appendChild(grid);
+    }
+
+    // 3. Album Detail View
+    function renderAlbumDetailView(albumName) {
+      const lang = getLang();
+      const albumSongs = songs.filter(s => s.album === albumName);
+      if (albumSongs.length === 0) {
+        mainContent.innerHTML = `<div class="empty-state">${translateText("Album not found.", lang)}</div>`;
+        return;
+      }
+
+      const firstSong = albumSongs[0];
+      const container = document.createElement('div');
+      container.className = 'detail-view';
+
+      container.innerHTML = `
+        <button class="btn-icon back-btn" onclick="switchView('albums')">← ${translateText("Albums", lang)}</button>
+        <div class="detail-header">
+          <img src="${firstSong.cover}" alt="Cover">
+          <div class="detail-info">
+            <h1 class="detail-title">${translateText(firstSong.album, lang)}</h1>
+            <p class="detail-subtitle">${translateText("By", lang)} ${translateText(firstSong.artist, lang)}</p>
+          </div>
+        </div>
+      `;
+
+      const table = document.createElement('table');
+      table.className = 'list-view';
+      const tbody = document.createElement('tbody');
+
+      albumSongs.forEach((song) => {
+        const globalIndex = songs.indexOf(song);
+        const tr = document.createElement('tr');
+        if (globalIndex === currentTrackIndex) tr.className = 'playing';
+
+        tr.innerHTML = `<td>${translateText(song.title, lang)}</td>`;
+        tr.addEventListener('click', () => playSongByIndex(globalIndex));
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+      mainContent.appendChild(container);
+    }
+
+    // 4. Artists Grid View
+    function renderArtistsView() {
+      const lang = getLang();
+      const grid = document.createElement('div');
+      grid.className = 'grid-view';
+
+      const artistMap = {};
+      songs.forEach(song => {
+        if (!artistMap[song.artist]) {
+          artistMap[song.artist] = {
+            name: song.artist,
+            artistImage: song.artistImage || song.cover
+          };
+        }
+      });
+
+      const sortedArtists = Object.values(artistMap).sort((a, b) => a.name.localeCompare(b.name));
+
+      if (sortedArtists.length === 0) {
+        mainContent.innerHTML = `<div class="empty-state">${translateText("No artists available.", lang)}</div>`;
+        return;
+      }
+
+      sortedArtists.forEach(artist => {
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+        item.innerHTML = `
+          <img src="${artist.artistImage}" alt="Artist">
+          <div class="grid-item-title">${translateText(artist.name, lang)}</div>
+        `;
+
+        item.addEventListener('click', () => {
+          currentView = `artist-detail-${artist.name}`;
+          render();
+        });
+
+        grid.appendChild(item);
+      });
+
+      mainContent.appendChild(grid);
+    }
+
+    // 5. Artist Profile View
+    function renderArtistDetailView(artistName) {
+      const lang = getLang();
+      const artistSongs = songs.filter(s => s.artist === artistName);
+      if (artistSongs.length === 0) {
+        mainContent.innerHTML = `<div class="empty-state">${translateText("Artist not found.", lang)}</div>`;
+        return;
+      }
+
+      const firstSong = artistSongs[0];
+      const artistImg = firstSong.artistImage || firstSong.cover;
+
+      const container = document.createElement('div');
+      container.className = 'detail-view';
+
+      container.innerHTML = `
+        <button class="btn-icon back-btn" onclick="switchView('artists')">← ${translateText("Artists", lang)}</button>
+        <div class="detail-header">
+          <img src="${artistImg}" alt="Artist">
+          <div class="detail-info">
+            <h1 class="detail-title">${translateText(artistName, lang)}</h1>
+          </div>
+        </div>
+      `;
+
+      const albums = {};
+      artistSongs.forEach(song => {
+        if (!albums[song.album]) albums[song.album] = [];
+        albums[song.album].push(song);
+      });
+
+      Object.keys(albums).forEach(albumName => {
+        const albumSection = document.createElement('div');
+        albumSection.style.marginBottom = '24px';
+        
+        const albumHeader = document.createElement('h3');
+        albumHeader.style.borderBottom = '1px solid #ccc';
+        albumHeader.style.paddingBottom = '4px';
+        albumHeader.innerText = translateText(albumName, lang);
+        albumSection.appendChild(albumHeader);
+
+        const table = document.createElement('table');
+        table.className = 'list-view';
+        const tbody = document.createElement('tbody');
+
+        albums[albumName].forEach(song => {
+          const globalIndex = songs.indexOf(song);
+          const tr = document.createElement('tr');
+          if (globalIndex === currentTrackIndex) tr.className = 'playing';
+
+          tr.innerHTML = `<td>${translateText(song.title, lang)}</td>`;
+          tr.addEventListener('click', () => playSongByIndex(globalIndex));
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        albumSection.appendChild(table);
+        container.appendChild(albumSection);
+      });
+
+      mainContent.appendChild(container);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
